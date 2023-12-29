@@ -6,11 +6,11 @@ class Player
     attr_accessor :name, :tries, :word, :guess
     
 
-    def initialize(name, word, guess)
+    def initialize(name)
         @name = name
         @tries = 5
-        @word = word
-        @guess = guess
+        @word = get_word()
+        @guess = guesses(@word)
     end
 
     def subtract_tries()
@@ -18,42 +18,37 @@ class Player
         return @tries
     end
 
-    def to_yaml
-        YAML.dump({
-            :name => @name,
-            :tries => @tries,
-            :word => @word,
-            :guess => @guess,
-        })
-    end
+    def get_word()
 
-    def self.from_yaml(string)
-        data = YAML.load string
-        p data
-        self.new(data[:name], data[:tries], data[:word], data[:guess])
-    end
+        dictionary = CSV.read('google-10000-english-no-swears.txt')
 
-end
-
-def get_word(lists)
-
-    revised_list = []
-
-    lists.each do |list|
-        list.each do |word|
-            if word.length > 4 && word.length < 13
-                revised_list << word
+        revised_list = []
+    
+        dictionary.each do |list|
+            list.each do |word|
+                if word.length > 4 && word.length < 13
+                    revised_list << word
+                end
             end
         end
-    end
+        
+        list_length = revised_list.length
     
-    list_length = revised_list.length
+        word = revised_list[rand(0...list_length)]
+    
+        return word
+    
+    end
 
-    word = revised_list[rand(0...list_length)]
-
-    return word
+    def guesses(word)
+        words = word.split("")
+        tempWord = words.map {|letter| letter = "_"}
+        return tempWord
+    end
 
 end
+
+
 
 def hangman(player)
 
@@ -70,7 +65,7 @@ def hangman(player)
 
         puts "\n#{available_word}"
 
-        puts "\nWhat letter will you choose?"
+        puts "\nWhat letter will you choose? Type 'save' if you want to save the game."
         choice = gets.chomp
         index = 0
 
@@ -82,6 +77,10 @@ def hangman(player)
                 end
             end
         
+        elsif choice == "save"
+            save_account(player)
+            exit
+            
         elsif (alphabet.include?(choice.upcase)) == false
             puts "\nWrong input. Try again"
         else
@@ -90,33 +89,16 @@ def hangman(player)
             puts "\nWrong. You have #{player.tries} left"
         end
 
-        print "\n#{player.guess.join(" ")}"
+        puts "\n#{player.guess.join(" ")}"
 
-        puts "\nPress 1 to Save the Game and Press any character to continue the game"
-        answer = gets.chomp
-        puts answer
-
-        if answer == '1'
-            player.to_yaml
-            player.tries = 0
-            puts player.tries
-            gameComplete = true
-
-        else
-            next
-
-        end
-        
         if player.tries == 0
             puts "\nYou Lose!"
             puts "The word is #{words.join("")}"
         end
 
         if player.guess.join("").include?('_') == false
-            gameComplete = true
-            player.tries = 0
-            puts player.tries
-            puts "You Win!"
+            puts "\nYou Win!"
+            exit
         end
 
 
@@ -125,33 +107,49 @@ def hangman(player)
 end
 
 
+def save_account(game)
+
+    puts "What's the file name?"
+    filename = gets.chomp
+    return false unless filename
+    dump = YAML.dump(game)
+    File.open(File.join(Dir.pwd, "/saved/#{filename}.yaml"), 'w') { |file| file.write dump }
+
+end
+
+=begin
+def load_account()
+
+    data = File.open(Dir.glob("hangmangame.yml", 'r+'))
+    p data
+    "Pick a saved file here. Choose the number of the file."
+    answer = gets.chomp
+
+
+end
+
+
+
 # Ask for the Player's choice
 
 puts "Press 1 to play a New Game, Press 2 to Load a Saved Game"
 answer = gets.chomp
 
 if answer == '1'
-    continue
+    "Start Game"
 elsif answer == '2'
-    p = Player.from_yaml(p.to_yaml)
-    puts "Name: #{p.name}"
-    puts "Tries: #{p.tries}"
-    puts "Guess: #{p.guess}"
-
+    load_account()
 end
+=end
 
 
-dictionary = CSV.read('google-10000-english-no-swears.txt')
 
-word = get_word(dictionary)
-words = word.split("")
-tempWord = words.map {|letter| letter = "_"}
 
 puts "What's your name? "
 
 
 name = gets.chomp
-
-player = Player.new(name, word, tempWord)
+    
+player = Player.new(name)
 
 hangman(player)
