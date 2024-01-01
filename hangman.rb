@@ -117,18 +117,41 @@ def save_account(game)
 
 end
 
-=begin
+
 def load_account()
 
-    data = File.open(Dir.glob("hangmangame.yml", 'r+'))
-    p data
-    "Pick a saved file here. Choose the number of the file."
-    answer = gets.chomp
+    puts "Here are the current saved games. Please choose which you'd like to load."
 
+    filenames = Dir.glob('saved/*').map { |file| file[(file.index('/') + 1)...(file.index('.'))] }
+    puts filenames
+    filename = gets.chomp
+    while filenames.include?(filename) != true
+        puts "File name does not exist. Try again"
+        puts filenames
+        filename = gets.chomp
+    end
+    puts "#{filename} loaded..."
+    
+    saved = File.open(File.join(Dir.pwd, "saved/#{filename}.yaml"))
+    loaded_game = YAML.unsafe_load(saved)
+    saved.close
+    
+    hangman(loaded_game)
 
 end
 
 
+
+def new_game()
+
+    puts "What's your name? "
+
+    name = gets.chomp
+        
+    player = Player.new(name)
+
+    hangman(player)
+end
 
 # Ask for the Player's choice
 
@@ -136,20 +159,13 @@ puts "Press 1 to play a New Game, Press 2 to Load a Saved Game"
 answer = gets.chomp
 
 if answer == '1'
-    "Start Game"
+    new_game()
 elsif answer == '2'
     load_account()
 end
-=end
 
 
 
 
-puts "What's your name? "
 
 
-name = gets.chomp
-    
-player = Player.new(name)
-
-hangman(player)
